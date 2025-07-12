@@ -1,0 +1,486 @@
+Addplant.html
+<div class="add-plant-container d-flex justify-content-center align-items-center">
+  <div class="form-wrapper bg-white shadow-lg rounded p-4">
+    <form [formGroup]="plantForm" (ngSubmit)="onSubmit()">
+      <h4 class="mb-4 text-center">Add New Plant</h4>
+
+      <div class="form-group mb-3">
+        <label for="plantName" class="form-label">Plant Name *</label>
+        <input type="text" class="form-control" formControlName="plantName" placeholder="Enter plant name">
+        <div class="text-danger small" *ngIf="plantForm.controls['plantName'].touched && plantForm.controls['plantName'].invalid">
+          Plant Name is required.
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="description" class="form-label">Description *</label>
+        <textarea class="form-control" formControlName="description" rows="2" placeholder="Enter description"></textarea>
+        <div class="text-danger small" *ngIf="plantForm.controls['description'].touched && plantForm.controls['description'].invalid">
+          Description is required.
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="price" class="form-label">Price *</label>
+        <input type="number" class="form-control" formControlName="price" placeholder="Enter price">
+        <div class="text-danger small" *ngIf="plantForm.controls['price'].touched && plantForm.controls['price'].invalid">
+          Price must be at least ₹1.
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="stockQuantity" class="form-label">Stock Quantity *</label>
+        <input type="number" class="form-control" formControlName="stockQuantity" placeholder="Enter stock quantity">
+        <div class="text-danger small" *ngIf="plantForm.controls['stockQuantity'].touched && plantForm.controls['stockQuantity'].invalid">
+          Stock Quantity is required.
+        </div>
+      </div>
+
+      <div class="form-group mb-3">
+        <label for="category" class="form-label">Category *</label>
+        <select class="form-select" formControlName="category">
+          <option value="" disabled>Select Category</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+        <div class="text-danger small" *ngIf="plantForm.controls['category'].touched && plantForm.controls['category'].invalid">
+          Category is required.
+        </div>
+      </div>
+
+      <div class="form-group mb-4">
+        <label for="coverImage" class="form-label">Cover Image *</label>
+        <input type="file" class="form-control" (change)="handleFileChange($event)">
+        <div class="text-danger small" *ngIf="coverImageError">
+          {{ coverImageError }}
+        </div>
+      </div>
+
+      <div class="text-center">
+        <button type="submit" class="btn btn-success w-100" [disabled]="plantForm.invalid">Add Plant</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+Addplant.ts
+import { Component } from '@angular/core';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+@Component({
+  selector: 'app-add-plant',
+  templateUrl: './add-plant.component.html',
+  styleUrls: ['./add-plant.component.css']
+})
+export class AddPlantComponent {
+  plantForm: FormGroup;
+  coverImageBase64: string = '';
+  coverImageError: string = '';
+  categories: string[] = ['Indoor', 'Outdoor', 'Flowering', 'Herbs'];
+
+  constructor(private fb: FormBuilder) {
+    this.plantForm = this.fb.group({
+      plantName: ['', Validators.required],
+      description: ['', Validators.required],
+      price: [null, [Validators.required, Validators.min(1)]],
+      stockQuantity: [null, [Validators.required, Validators.min(1)]],
+      category: ['', Validators.required]
+    });
+  }
+
+  handleFileChange(event: any) {
+    const file = event.target.files[0];
+    this.coverImageError = '';
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+      if (!allowedTypes.includes(file.type)) {
+        this.coverImageError = 'Only JPG, JPEG, or PNG files are allowed.';
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        this.coverImageError = 'File size should not exceed 5MB.';
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        this.coverImageBase64 = reader.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  onSubmit() {
+    if (this.plantForm.valid && !this.coverImageError) {
+      const plantData = {
+        ...this.plantForm.value,
+        coverImage: this.coverImageBase64
+      };
+      console.log('Plant Added:', plantData);
+      // Save to DB logic here
+    }
+  }
+}
+
+plantcreate.ts
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { PlantService } from '../services/plant.service';
+
+@Component({
+  selector: 'app-plant-create',
+  templateUrl: './plant-create.component.html'
+})
+export class PlantCreateComponent implements OnInit {
+  plantForm!: FormGroup;
+  plantId!: string | null;
+  isEditMode = false;
+
+  constructor(
+    private route: ActivatedRoute,
+    private fb: FormBuilder,
+    private plantService: PlantService
+  ) {}
+
+  ngOnInit(): void {
+    this.initForm();
+
+    this.route.queryParams.subscribe(params => {
+      this.plantId = params['id'];
+      if (this.plantId) {
+        this.isEditMode = true;
+        this.loadPlantData(this.plantId);
+      }
+    });
+  }
+
+  initForm() {
+    this.plantForm = this.fb.group({
+      plantName: ['', Validators.required],
+      description: ['', Validators.required],
+      price: [0, [Validators.required, Validators.min(1)]],
+      stockQuantity: [0, [Validators.required, Validators.min(1)]],
+      category: ['', Validators.required],
+      coverImage: ['']
+    });
+  }
+
+  loadPlantData(id: string) {
+    this.plantService.getPlantById(id).subscribe(plant => {
+      this.plantForm.patchValue(plant);
+    });
+  }
+
+  onSubmit() {
+    if (this.plantForm.valid) {
+      const plantData = this.plantForm.value;
+      if (this.isEditMode) {
+        this.plantService.updatePlant(this.plantId!, plantData).subscribe(() => {
+          alert('Plant updated successfully');
+        });
+      } else {
+        this.plantService.createPlant(plantData).subscribe(() => {
+          alert('New plant added');
+        });
+      }
+    }
+  }
+}
+
+plantservice.ts
+getPlantById(id: string) {
+  return this.http.get<Plant>(`/api/plants/${id}`);
+}
+
+updatePlant(id: string, plantData: any) {
+  return this.http.put(`/api/plants/${id}`, plantData);
+}
+
+createPlant(plantData: any) {
+  return this.http.post(`/api/plants`, plantData);
+}
+
+Login html
+<div class="container mt-5 pt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 shadow rounded p-4 d-flex flex-column flex-md-row">
+      
+      <!-- Left image -->
+      <div class="col-md-6 d-none d-md-block pe-3">
+        <img src="assets/images/login.png" class="img-fluid rounded h-100 w-100 object-fit-contain" alt="login illustration"/>
+      </div>
+
+      <!-- Right form -->
+      <div class="col-md-6 bg-light p-4">
+        <div class="text-center mb-3">
+          <img src="assets/images/logo.png" width="50" alt="logo"/>
+          <h5 class="mt-2 fw-bold">NurseryPro</h5>
+          <small class="text-muted">Login</small>
+        </div>
+
+        <form #loginForm="ngForm" (ngSubmit)="handleLogin()" novalidate>
+
+          <!-- Email -->
+          <div class="mb-3">
+            <input type="email" name="email" class="form-control" placeholder="Email"
+                   [(ngModel)]="formData.email"
+                   #email="ngModel"
+                   required
+                   (blur)="validateField('email', formData.email)">
+            <div class="text-danger small mt-1" *ngIf="email.invalid && email.touched">
+              Email is required
+            </div>
+            <div class="text-danger small mt-1" *ngIf="error.email && email.valid">
+              {{ error.email }}
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-3">
+            <input type="password" name="password" class="form-control" placeholder="Password"
+                   [(ngModel)]="formData.password"
+                   #password="ngModel"
+                   required minlength="6"
+                   (blur)="validateField('password', formData.password)">
+            <div class="text-danger small mt-1" *ngIf="password.invalid && password.touched">
+              Password is required
+            </div>
+            <div class="text-danger small mt-1" *ngIf="error.password && password.valid">
+              {{ error.password }}
+            </div>
+          </div>
+
+          <!-- Forgot password -->
+          <div class="d-flex justify-content-between mb-3">
+            <a routerLink="/forgot-password" class="text-decoration-none small">Forgot Password?</a>
+          </div>
+
+          <!-- Login button -->
+          <button type="submit" class="btn btn-primary w-100" [disabled]="loginForm.invalid">Login</button>
+
+          <!-- Signup link -->
+          <div class="text-center mt-3">
+            <small>Don't have an account? <a [routerLin]()
+
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { NavbarService } from 'src/app/services/navbar.service';
+
+@Component({
+  selector: 'app-login',
+  templateUrl: './login.component.html',
+  styleUrls: ['./login.component.css']
+})
+export class LoginComponent implements OnInit {
+  formData = {
+    email: '',
+    password: ''
+  };
+
+  error = {
+    email: '',
+    password: ''
+  };
+
+  constructor(private router: Router, private navbarService: NavbarService) {}
+
+  ngOnInit(): void {
+    localStorage.removeItem('email');
+    localStorage.removeItem('role');
+  }
+
+  validateField(field: string, value: string): void {
+    if (field === 'email') {
+      if (!value) {
+        this.error.email = 'Email is required';
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        this.error.email = emailRegex.test(value) ? '' : 'Please enter a valid email';
+      }
+    }
+
+    if (field === 'password') {
+      if (!value) {
+        this.error.password = 'Password is required';
+      } else {
+        this.error.password = value.length >= 6 ? '' : 'Password must be at least 6 characters';
+      }
+    }
+  }
+
+  handleLogin(): void {
+    this.validateField('email', this.formData.email);
+    this.validateField('password', this.formData.password);
+
+    if (this.error.email || this.error.password) {
+      return;
+    }
+
+    if (this.formData.email.toLowerCase().includes('admin')) {
+      localStorage.setItem('role', 'admin');
+      this.navbarService.setAdmin();
+      this.router.navigate(['/dashboard']);
+    } else {
+      localStorage.setItem('role', 'user');
+      this.router.navigate(['/home']);
+    }
+  }
+}
+
+
+Signup.html
+<div class="container mt-5 pt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 shadow-lg rounded-4 overflow-hidden d-flex flex-column flex-md-row">
+
+      <!-- Left side image -->
+      <div class="col-md-6 d-none d-md-block bg-white p-3">
+        <img src="assets/images/login.png" class="img-fluid h-100 w-100 object-fit-contain rounded" alt="signup illustration" />
+      </div>
+
+      <!-- Right side form -->
+      <div class="col-md-6 bg-light p-4">
+        <div class="text-center mb-3">
+          <img src="assets/images/logo.png" width="50" alt="logo" />
+          <h5 class="mt-2 fw-bold">NurseryPro</h5>
+          <small class="text-muted">Signup</small>
+        </div>
+
+        <form (ngSubmit)="handleSubmit()" #signupForm="ngForm" novalidate>
+
+          <!-- Username -->
+          <div class="mb-2">
+            <input type="text" class="form-control" name="username" placeholder="Username"
+              [(ngModel)]="formData.username" (blur)="validateField('username', formData.username)">
+            <div *ngIf="errors.username" class="text-danger small">{{ errors.username }}</div>
+          </div>
+
+          <!-- Email -->
+          <div class="mb-2">
+            <input type="email" class="form-control" name="email" placeholder="Email"
+              [(ngModel)]="formData.email" (blur)="validateField('email', formData.email)">
+            <div *ngIf="errors.email" class="text-danger small">{{ errors.email }}</div>
+          </div>
+
+          <!-- Mobile -->
+          <div class="mb-2">
+            <input type="text" class="form-control" name="mobile" placeholder="Mobile"
+              [(ngModel)]="formData.mobile" (blur)="validateField('mobile', formData.mobile)">
+            <div *ngIf="errors.mobile" class="text-danger small">{{ errors.mobile }}</div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-2">
+            <input type="password" class="form-control" name="password" placeholder="Password"
+              [(ngModel)]="formData.password" (blur)="validateField('password', formData.password)">
+            <div *ngIf="errors.password" class="text-danger small">{{ errors.password }}</div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-2">
+            <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm Password"
+              [(ngModel)]="formData.confirmPassword" (blur)="validateField('confirmPassword', formData.confirmPassword)">
+            <div *ngIf="errors.confirmPassword" class="text-danger small">{{ errors.confirmPassword }}</div>
+          </div>
+
+          <!-- Role -->
+          <div class="mb-3">
+            <select class="form-select" name="role" [(ngModel)]="formData.role"
+              (blur)="validateField('role', formData.role)">
+              <option value="" disabled selected>Select Role</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+            <div *ngIf="errors.role" class="text-danger small">{{ errors.role }}</div>
+          </div>
+
+          <!-- Signup button -->
+          <button type="submit" class="btn btn-primary w-100">Signup</button>
+
+          <!-- Already have account -->
+          <div class="text-center mt-3">
+            <small>Already have an account? <a [routerLink]="['/login']" class="text-decoration-none">Login</a></small>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+signup.ts
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-signup',
+  templateUrl: './signup.component.html',
+  styleUrls: ['./signup.component.css']
+})
+export class SignupComponent implements OnInit {
+
+  formData = {
+    username: '',
+    email: '',
+    mobile: '',
+    password: '',
+    confirmPassword: '',
+    role: ''
+  };
+
+  errors: any = {};
+
+  constructor(private router: Router) { }
+
+  ngOnInit(): void {}
+
+  validateField(fieldName: string, value: string): void {
+    switch (fieldName) {
+      case 'username':
+        this.errors.username = !value.trim() ? 'Username is required' : '';
+        break;
+      case 'email':
+        if (!value.trim()) {
+          this.errors.email = 'Email is required';
+        } else {
+          const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+          this.errors.email = emailRegex.test(value) ? '' : 'Please enter a valid email';
+        }
+        break;
+      case 'mobile':
+        if (!value.trim()) {
+          this.errors.mobile = 'Mobile number is required';
+        } else {
+          const mobileRegex = /^[0-9]{10}$/;
+          this.errors.mobile = mobileRegex.test(value) ? '' : 'Mobile number must be 10 digits';
+        }
+        break;
+      case 'password':
+        if (!value.trim()) {
+          this.errors.password = 'Password is required';
+        } else {
+          this.errors.password = value.length < 6 ? 'Password must be at least 6 characters' : '';
+        }
+        break;
+      case 'confirmPassword':
+        this.errors.confirmPassword = value !== this.formData.password ? 'Confirm Password is required' :
+          value.trim() === '' ? 'Confirm Password is required' : '';
+        break;
+      case 'role':
+        this.errors.role = !value ? 'UserRole is required' : '';
+        break;
+    }
+  }
+
+  handleSubmit(): void {
+    Object.keys(this.formData).forEach(field => {
+      this.validateField(field, this.formData[field]);
+    });
+
+    if (Object.values(this.errors).every(e => e === '')) {
+      localStorage.setItem('registeredUser', JSON.stringify(this.formData));
+      alert('User Registration Successful!');
+      this.router.navigate(['/login']);
+    }
+  }
+}
