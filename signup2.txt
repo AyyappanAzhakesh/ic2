@@ -1,0 +1,157 @@
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-signup',
+  templateUrl: './signup.component.html',
+  styleUrls: ['./signup.component.css']
+})
+export class SignupComponent implements OnInit {
+
+  formData = {
+    username: '',
+    email: '',
+    mobile: '',
+    password: '',
+    confirmPassword: '',
+    role: ''
+  };
+
+  errors: any = {};
+
+  constructor(private router: Router) {}
+
+  ngOnInit(): void {}
+
+  validateField(fieldName: string, value: string): void {
+    switch (fieldName) {
+      case 'username':
+        this.errors.username = !value.trim() ? 'Username is required' : '';
+        break;
+
+      case 'email':
+        if (!value.trim()) {
+          this.errors.email = 'Email is required';
+        } else {
+          const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
+          this.errors.email = emailRegex.test(value) ? '' : 'Please enter a valid email';
+        }
+        break;
+
+      case 'mobile':
+        if (!value.trim()) {
+          this.errors.mobile = 'Mobile number is required';
+        } else {
+          const mobileRegex = /^[0-9]{10}$/;
+          this.errors.mobile = mobileRegex.test(value) ? '' : 'Mobile number must be 10 digits';
+        }
+        break;
+
+      case 'password':
+        if (!value.trim()) {
+          this.errors.password = 'Password is required';
+        } else {
+          this.errors.password = value.length < 6 ? 'Password must be at least 6 characters' : '';
+        }
+        break;
+
+      case 'confirmPassword':
+        if (!value.trim()) {
+          this.errors.confirmPassword = 'Confirm Password is required';
+        } else if (value !== this.formData.password) {
+          this.errors.confirmPassword = 'Passwords do not match';
+        } else {
+          this.errors.confirmPassword = '';
+        }
+        break;
+
+      case 'role':
+        this.errors.role = !value ? 'UserRole is required' : '';
+        break;
+    }
+  }
+
+  handleSubmit(): void {
+    Object.keys(this.formData).forEach(field => {
+      this.validateField(field, this.formData[field]);
+    });
+
+    if (Object.values(this.errors).every(err => err === '')) {
+      localStorage.setItem('registeredUser', JSON.stringify(this.formData));
+      alert('User Registration Successful!');
+      this.router.navigate(['/login']);
+    }
+  }
+}
+
+<div class="container mt-5 pt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 shadow rounded-4 overflow-hidden d-flex flex-column flex-md-row" style="background-color: white;">
+
+      <!-- Left image -->
+      <div class="col-md-6 d-none d-md-block p-0">
+        <img src="assets/images/login.png" class="img-fluid w-100 h-100" alt="signup illustration" style="object-fit: cover;" />
+      </div>
+
+      <!-- Signup form -->
+      <div class="col-md-6 bg-white p-4">
+        <div class="text-center mb-3">
+          <img src="assets/images/logo.png" width="50" alt="logo" />
+          <h5 class="mt-2 fw-bold">NurseryPro</h5>
+          <small class="text-muted">Signup</small>
+        </div>
+
+        <form (ngSubmit)="handleSubmit()" #signupForm="ngForm" novalidate>
+
+          <!-- Username -->
+          <div class="mb-2">
+            <input type="text" class="form-control" name="username" placeholder="Username" [(ngModel)]="formData.username" (blur)="validateField('username', formData.username)" />
+            <div *ngIf="errors.username" class="text-danger small">{{ errors.username }}</div>
+          </div>
+
+          <!-- Email -->
+          <div class="mb-2">
+            <input type="email" class="form-control" name="email" placeholder="Email" [(ngModel)]="formData.email" (blur)="validateField('email', formData.email)" />
+            <div *ngIf="errors.email" class="text-danger small">{{ errors.email }}</div>
+          </div>
+
+          <!-- Mobile -->
+          <div class="mb-2">
+            <input type="text" class="form-control" name="mobile" placeholder="Mobile" [(ngModel)]="formData.mobile" (blur)="validateField('mobile', formData.mobile)" />
+            <div *ngIf="errors.mobile" class="text-danger small">{{ errors.mobile }}</div>
+          </div>
+
+          <!-- Password -->
+          <div class="mb-2">
+            <input type="password" class="form-control" name="password" placeholder="Password" [(ngModel)]="formData.password" (blur)="validateField('password', formData.password)" />
+            <div *ngIf="errors.password" class="text-danger small">{{ errors.password }}</div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="mb-2">
+            <input type="password" class="form-control" name="confirmPassword" placeholder="Confirm Password" [(ngModel)]="formData.confirmPassword" (blur)="validateField('confirmPassword', formData.confirmPassword)" />
+            <div *ngIf="errors.confirmPassword" class="text-danger small">{{ errors.confirmPassword }}</div>
+          </div>
+
+          <!-- Role -->
+          <div class="mb-3">
+            <select class="form-select" name="role" [(ngModel)]="formData.role" (blur)="validateField('role', formData.role)">
+              <option value="" disabled selected>Select Role</option>
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+            </select>
+            <div *ngIf="errors.role" class="text-danger small">{{ errors.role }}</div>
+          </div>
+
+          <!-- Button -->
+          <button type="submit" class="btn btn-primary w-100">Signup</button>
+
+          <div class="text-center mt-3">
+            <small>Already have an account? <a [routerLink]="['/login']" class="text-decoration-none">Login</a></small>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
