@@ -1,0 +1,82 @@
+VERIFY LOGIN LOGIC
+verifyLogin(username,password):Observable<any>{
+     return this.getAllUsers().pipe(map(users=>{
+      const match = users.find(user=>user.username === username && user.password === password);
+      if(match){
+        localStorage.setItem('currentUser',JSON.stringify(match));
+        return match;
+
+      }
+      else{
+        throw new Error('Invalid username or password');
+      }
+    })
+     );
+  }
+USER SERVICE 
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { User } from '../models/user.model';
+import {map} from 'rxjs/operators'
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UserService {
+  public apiUrl:string="https://ide-badbaccbabcfd330227665fccecdebedaone.project.examly.io/proxy/3001/users";
+  constructor(private http:HttpClient){}
+   getUserByUsername(username:string):Observable<User>{
+    return this.http.get<User>(`${this.apiUrl}?username=${username}`);
+   }
+   getUserById(id:number):Observable<User>{
+    return this.http.get<User>(`${this.apiUrl}/${id}`);
+   }
+   getAllUsers():Observable<User[]>{
+    return this.http.get<User[]>(this.apiUrl);
+   }
+   verifyLogin(username,password):Observable<any>{
+     return this.getAllUsers().pipe(map(users=>{
+      const match = users.find(user=>user.username === username && user.password === password);
+      if(match){
+        localStorage.setItem('currentUser',JSON.stringify(match));
+        return match;
+
+      }
+      else{
+        throw new Error('Invalid username or password');
+      }
+    })
+     );
+  }
+   deleteUser(id:User):Observable<void>{
+    return this.http.delete<void>(`${this.apiUrl},${id}`);
+   }
+
+ 
+}
+KANBANBOARD.TS
+import { Component, OnInit } from '@angular/core';
+import { TaskService } from '../services/task.service';
+
+@Component({
+  selector: 'app-kanban-board',
+  templateUrl: './kanban-board.component.html',
+  styleUrls: ['./kanban-board.component.css']
+})
+export class KanbanBoardComponent implements OnInit {
+  tasks:any[]=[];
+
+  constructor(private taskService: TaskService) { }
+
+  ngOnInit(): void {
+    this.taskService.getTasks().subscribe((data)=>{
+      this.tasks = data;
+    });
+  }
+  getTasksForStage(stage:string){
+    return this.tasks.filter(task => task.status === stage);
+  }
+
+
+}
