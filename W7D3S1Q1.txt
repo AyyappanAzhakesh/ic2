@@ -1,0 +1,38 @@
+W7D3S1Q1
+
+const fs = require('fs');
+const path = require('path');
+
+const filePath = path.join(__dirname, 'test.txt');
+
+// Write content to test.txt
+function writeFile(content) {
+    fs.writeFileSync(filePath, content, {
+        encoding: 'utf-8',
+        mode: 0o644 // Set file permissions explicitly
+    });
+}
+
+// Read content from test.txt
+function readFile() {
+    if (fs.existsSync(filePath)) {
+        return fs.readFileSync(filePath, 'utf-8');
+    } else {
+        return '';
+    }
+}
+
+// Delete test.txt if it exists
+function deleteFile() {
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+}
+
+// Export the functions
+module.exports = {
+    writeFile,
+    readFile,
+    deleteFile
+};
+

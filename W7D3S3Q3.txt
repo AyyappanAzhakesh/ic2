@@ -1,0 +1,54 @@
+W7D3S3Q3
+
+const fs = require('fs').promises;
+const path=require('path');
+const util=require('util');
+const file=path.resolve('data','input.txt')
+const file1=path.resolve('data','output.json')
+console.log(file1
+    )
+const readInputFile=async()=>{
+    try {
+        const data= await fs.readFile(file,'utf-8');
+        return data
+    } catch (error) {
+        throw new Error(error)
+    }
+}
+ 
+const countWords=(dataInput)=>{
+    try {
+        const cleanedInput=dataInput.toLowerCase().replace(/[^\w\s]/g,'');
+        const list =cleanedInput.split(/\s+/).filter(Boolean);
+        let count={}
+        list.forEach(a=>{
+            if(count[a]){
+                count[a]+=1;
+            }else{
+                count[a]=1;
+            }
+        })
+        return count
+    } catch (error) {
+        throw new Error(error);
+    }
+ 
+}
+ 
+const saveWordCount=async()=>{
+    try {
+        const data= await readInputFile()
+        const dataJson=await(countWords(data));
+        await fs.writeFile(file1,JSON.stringify(dataJson,null,2),'utf-8');
+       
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+ 
+function main(){
+   
+}
+countWords('Hello world! Hello.');
+ 
+module.exports={saveWordCount,countWords,readInputFile}

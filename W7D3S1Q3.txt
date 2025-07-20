@@ -1,0 +1,41 @@
+W7D3S1Q3
+
+class Inventory{
+    products;
+    constructor(){
+       this.products ={};
+    }
+    addProduct(name,quantity){
+        if(this.products[name]){
+            this.products[name] += quantity;
+        }
+        else{
+        this.products[name]=quantity;
+        }
+    }
+    updateProduct(name,quantity){
+        if(this.products[name]){
+            this.products[name] = quantity;
+        }
+        else{
+        throw new Error('Product not found');
+        }
+
+    }
+    removeProduct(name){
+        if(this.products[name]){
+            this.products[name] =null;
+
+        }
+        else{
+        throw new Error('Product not found.')
+    }
+}
+    getProduct(name){
+        if(this.products[name]==null){
+            return null;
+        }
+        return this.products[name];
+    }
+}
+module.exports = Inventory;

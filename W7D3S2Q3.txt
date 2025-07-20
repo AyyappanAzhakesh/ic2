@@ -1,0 +1,30 @@
+W7D3S2Q3
+
+global.Destination = class{
+    constructor(name,cost){
+        this.name = name;
+        this.cost = cost;
+    }
+}
+global.TravelPlan = class{
+    constructor(){
+        this.destinations =[];
+    }
+    addDestination(destination){
+        this.destinations.push(destination);
+        console.log(`Destination added: ${destination.name} - $${destination.cost.toFixed(2)}`);
+    }
+    calculateTotalCost(){
+      const totalPrice =  this.destinations.reduce((total,item) => total+item.cost,0);
+      return totalPrice;
+
+    }
+    printPlan(){
+        console.log("Travel Plan:");
+        this.destinations.forEach(destination=>{
+            console.log(`${destination.name} - $${destination.cost.toFixed(2)}`)
+        })
+
+    }
+}
+global.travelPlan =  new global.TravelPlan();

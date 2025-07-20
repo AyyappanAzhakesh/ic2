@@ -1,0 +1,42 @@
+W7D3S2Q2
+
+// Product class
+global.Product = class {
+  constructor(name, price) {
+    this.name = name;
+    this.price = price;
+  }
+};
+
+// ShoppingCart class
+global.ShoppingCart = class {
+  constructor() {
+    this.items = [];
+  }
+
+  addItem(product) {
+    this.items.push(product);
+  }
+
+  calculateTotalPrice() {
+    return this.items.reduce((total, item) => total + item.price, 0);
+  }
+};
+
+// Create product instances
+const phone = new Product("Phone", 599.99);
+const laptop = new Product("Laptop", 999.99);
+const headphones = new Product("Headphones", 99.99);
+
+// Create shopping cart and add items
+const cart = new ShoppingCart();
+cart.addItem(phone);
+cart.addItem(laptop);
+cart.addItem(headphones);
+
+// Print cart details
+console.log("Cart items:");
+cart.items.forEach(item => {
+  console.log(`${item.name}: \$${item.price}`);
+});
+console.log("Total Price: \$" + cart.calculateTotalPrice().toFixed(2));
