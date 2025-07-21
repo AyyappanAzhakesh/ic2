@@ -1,0 +1,34 @@
+W7D3S2Q1
+
+global.MenuItem = class{
+    constructor(name,price){
+        this.name = name;
+        this.price = price;
+    }
+}
+global.Order = class{
+    constructor(){
+        this.items =[];
+    }
+    addItem(item){
+        if(item instanceof global.MenuItem){
+            this.items.push(item);
+            return;
+        }
+        throw new Error('Item instance is invalid');
+    }
+    getOrderItem(){
+        console.log('Order items:');
+        this.items.forEach(order =>{
+            console.log(`${order.name}: $${order.price.toFixed(2)}`);
+        })
+        console.log(`Total Price: $${this.calculateTotalPrice().toFixed(2)}`);
+    }
+    calculateTotalPrice(){
+        return this.items.reduce((total,ele)=>total+ele.price,0);
+    }
+}
+module.exports ={
+    MenuItem:global.MenuItem,
+    Order:global.Order
+}

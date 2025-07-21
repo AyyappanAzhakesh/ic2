@@ -1,0 +1,38 @@
+W7D3S3Q2
+
+const fs = require('fs');
+const path = require('path');
+
+const expensesFilePath = path.join(__dirname,'data','expenses.json');
+const resultsFilePath = path.join(__dirname,'data','results.json');
+
+function roundToTwo(num) {
+    return Math.round(num * 100)/100
+}
+async function calculateSplitExpenses(){
+    const rawData = fs.readFileSync(expensesFilePath,'utf-8');
+    const expenses = JSON.parse(rawData);
+    if(expenses.length === 0) return [];
+    const total = expenses.reduce((sum,person)=>sum+person.amount,0);
+    const average = total/expenses.length;
+
+    const results = expenses.map(person =>{
+        const amountPaid = person.amount;
+        const amountOwed = roundToTwo(average);
+        const balance = roundToTwo(amountPaid - amountOwed);
+        return{
+            name:person.name,
+            amountPaid,
+            amountOwed,
+            balance
+        };
+    })
+    return results;
+}
+async function saveResults(results){
+    fs.writeFileSync(resultsFilePath, JSON.stringify(results,null,2),'utf8');
+}
+module.exports ={
+    calculateSplitExpenses,
+    saveResults
+};

@@ -1,41 +1,27 @@
 W7D3S1Q3
 
-class Inventory{
-    products;
-    constructor(){
-       this.products ={};
+const path = require('path');
+const fs = require('fs');
+class LoggingSystem {
+    static file = path.join(__dirname,'logs.txt');
+    static logMessage(message){
+        const timestamp = new Date().toISOString();
+        const data = `${timestamp}-${message}`;
+        fs.appendFileSync(LoggingSystem.file,data +'\n','utf-8');
     }
-    addProduct(name,quantity){
-        if(this.products[name]){
-            this.products[name] += quantity;
-        }
-        else{
-        this.products[name]=quantity;
-        }
-    }
-    updateProduct(name,quantity){
-        if(this.products[name]){
-            this.products[name] = quantity;
-        }
-        else{
-        throw new Error('Product not found');
-        }
+    static readLogs(){
+        if(fs.existsSync(LoggingSystem.file)){
+            const data = fs.readFileSync(LoggingSystem.file,'utf-8');
+            return data;
 
+        } 
+            return '';
+        
     }
-    removeProduct(name){
-        if(this.products[name]){
-            this.products[name] =null;
-
+    static deleteLogs(){
+        if(fs.existsSync(LoggingSystem.file)){
+            fs.unlinkSync(LoggingSystem.file);
         }
-        else{
-        throw new Error('Product not found.')
     }
 }
-    getProduct(name){
-        if(this.products[name]==null){
-            return null;
-        }
-        return this.products[name];
-    }
-}
-module.exports = Inventory;
+module.exports = LoggingSystem;

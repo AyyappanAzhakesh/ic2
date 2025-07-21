@@ -1,0 +1,61 @@
+W7D3S3Q1
+
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
+const util = require('util');
+
+const rateFile = path.resolve('data','rates.json')
+const transFile = path.resolve('data','transcations.log');
+
+ function getCurrencyRates(){
+   try{
+    return JSON.parse(fs.readFileSync(rateFile,'utf-8'));
+   } catch(error){
+    console.log(error);
+   }
+}
+ function convertCurrency(amount,from,to){
+    
+    const rates = getCurrencyRates();
+    if(!rates[from]||!rates[to]){
+       return new Promise((_resolve,_reject) =>{
+        throw new Error('Unsupported currency conversion');
+
+       });
+    }
+    const convertedAmount = (amount/rates[from]) *rates[to];
+    return convertedAmount;
+
+
+}
+
+ function logTransaction(amount, from ,to){
+    const timestamp = new Date().toISOString();
+    const result =`${timestamp} - ${amount}${from} to ${to} - ${convertCurrency(amount, from, to).toFixed(2)} EUR`;
+    fs.appendFileSync(transFile, result + '\n', 'utf-8');
+    return fs.readFileSync(transFile);
+
+
+}
+function logSystemInfo(){
+    console.log(`User Information: ${util.inspect(os.userInfo(), {depth:null, colors:true})}`);
+    console.log(`System Uptime: ${os.uptime()} seconds`);
+    console.log(`Platform: ${os.platform()}`);
+    console.log(`CPU Architecture: ${os.arch()}`);
+    console.log(`Memory Usage: ${os.freemem()} free/ ${os.totalmem()} total`);
+
+
+}
+function main(){
+    logSystemInfo();
+    console.log(`Converting 100 from USD to EUR`);
+    console.log(`Reading currency rates from: ${rateFile}`);
+    console.log(`Currency rates data: ${util.inspect(getCurrencyRates(),{depth:null,colors:true})}`);
+    console.log(`Converted amount: ${convertCurrency(100, 'USD', 'EUR')}`);
+    console.log(`100 USD is equivalent to ${convertCurrency(100, 'USD', 'EUR').toFixed(2)}`)
+    console.log(`Logging Transaction: ${logTransaction(100, 'USD', "EUR")}`);
+    console.log('Transaction logged successfully');
+}
+main();
+module.exports ={getCurrencyRates,convertCurrency,logSystemInfo,logTransaction,main}
