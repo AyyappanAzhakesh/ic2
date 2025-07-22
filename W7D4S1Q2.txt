@@ -1,0 +1,61 @@
+W7D4S1Q2
+
+const http = require('http');
+const url = require('url');
+
+class EventManager {
+  constructor() {
+    this.events = [];
+    this.handleRequest = this.handleRequest.bind(this);
+  }
+
+  addEvent(name, dateStr) {
+    const event = { name, date: dateStr };
+    this.events.push(event);
+    return event;
+  }
+
+  listEvents() {
+    return this.events;
+  }
+
+  handleRequest(req, res) {
+    const { pathname } = url.parse(req.url, true);
+
+    if (req.method === 'POST' && pathname === '/add-event') {
+      let body = '';
+      req.on('data', chunk => {
+        body += chunk.toString();
+      }).on('end', () => {
+        try {
+          const { name, date } = JSON.parse(body);
+
+          // Basic validation
+          if (
+            typeof name !== 'string' ||
+            typeof date !== 'string' ||
+            isNaN(Date.parse(date))
+          ) {
+            res.writeHead(400, { 'Content-Type': 'text/plain' });
+            return res.end('Invalid input data');
+          }
+
+          const event = this.addEvent(name, date);
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify(event));
+        } catch (error) {
+          res.writeHead(400, { 'Content-Type': 'text/plain' });
+          res.end('Invalid input data');
+        }
+      });
+    } else if (req.method === 'GET' && pathname === '/events') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(this.listEvents()));
+    } else {
+      res.writeHead(404, { 'Content-Type': 'text/plain' });
+      res.end('Not Found');
+    }
+  }
+}
+
+module.exports = new EventManager();
