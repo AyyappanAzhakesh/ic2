@@ -1,0 +1,57 @@
+W7D4S1Q3
+
+const http = require('http');
+const {parse} = require('url');
+const chatApp ={
+    messages:[],
+    sendMessage(username, message){
+        if(typeof username!=='string' || typeof message!=='string'||!username||!message){
+            return null;
+        }
+        const msg = {username, message};
+        this.messages.push(msg);
+        return msg;
+    },
+    listMessages(){
+        return this.messages;
+    },
+    handleRequest(req,res){
+        const parsedUrl = parse(req.url,true);
+        const method = req.method;
+        const path = parsedUrl.pathname;
+
+        if(method ==='POST' && path ==='/send-message'){
+            let body =[];
+            req.on('data',chunk =>{
+                body.push(chunk);
+            });
+            req.on('end',()=>{
+                body = Buffer.concat(body).toString();
+                let data;
+                try{
+                    data = JSON.parse(body);
+                } catch (err){
+                    res.writeHead(400, {'Content-Type':'text/plain'});
+                    res.end('Invalid input data');
+                    return;
+                }
+                const {username,message} = data;
+                const msg = this.sendMessage(username, message);
+                if(!msg){
+                    res.writeHead(400,{'Content-Type':'text/plain'});
+                    res.end('Invalid input data');
+                } else{
+                    res.writeHead(200, {'Content-Type':'application/json'});
+                    res.end(JSON.stringify(msg));
+                }
+            }); 
+        } else if(method ==='GET' && path ==='/messages'){
+            res.writeHead(200,{'Content-Type':'application/json'});
+            res.end(JSON.stringify(this.listMessages()));
+        } else{
+            res.writeHead(404, {'Content-Type':'text/plain'});
+            res.end('Not Found');
+        }
+    }
+};
+module.exports = chatApp;

@@ -1,0 +1,103 @@
+W7D4S2Q3
+
+
+productController.js
+const productModel = require('../models/productModel');
+
+exports.getAllProducts = (_req, res) => {
+    const products = productModel.getAllProducts();
+    res.status(200).json(products);
+}
+
+exports.getProductById = (req, res) => {
+    const id = parseInt(req.params?.id);
+    const product = productModel.getProductById(id);
+    if(!product){
+        return res.status(404).send('Product not found');
+    }
+    res.status(200).json(product);
+}
+
+exports.createProduct = (req, res) => {
+    res.status(201).json({product: productModel.createProduct(req.body)});
+}
+
+exports.updateProduct = (req, res) => {
+    const id = parseInt(req.params?.id);
+    const product = productModel.updateProduct(id, req.body);
+    if(!product){
+        return res.status(404).send('Product not found');
+    }
+    res.status(200).json(product);
+}
+
+exports.deleteProduct = (req, res) => {
+    const id = parseInt(req.params?.id);
+    const isRemoved = productModel.deleteProduct(id);
+    if(!isRemoved){
+        return res.status(404).send('Product not found');
+    }
+    res.status(200).json({message: `Product deleted successfully!`});
+}
+
+
+productModel.js
+const products = [];
+
+exports.getAllProducts = () => {
+    return products;
+}
+
+exports.getProductById = (id) => {
+    return products.find(product => product.id === id);
+}
+
+exports.createProduct = (product) => {
+    const newProduct = {id: !products.length ? 1: products[products.length - 1].id + 1, ...product};
+const newProduct = {id: !products.length ? 1 : products[products.length - 1].id + 1, ...product};
+    products.push(newProduct);
+    return newProduct;
+}
+
+exports.updateProduct = (id, updateProduct) => {
+    const product = products.find(product => product.id === id);
+    if(!product){
+        return;
+    }
+    Object.assign(product, updateProduct);
+    return product;
+}
+
+exports.deleteProduct = (id) => {
+    const index = products.findIndex(product => product.id === id);
+    if(index === -1){
+        return false;
+    }
+    products.splice(index, 1);
+    return true;
+}
+
+productRoutes.js
+const express = require('express');
+const productController = require('../controllers/productController');
+
+const router = express.Router();
+
+router.get('/products', productController.getAllProducts);
+router.get('/products/:id', productController.getProductById);
+router.post('/products', productController.createProduct);
+router.put('/products/:id', productController.updateProduct);
+router.delete('/products/:id', productController.deleteProduct);
+
+
+module.exports = router;
+
+index.js
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+app.use('/api', require('./routes/productRoutes'));
+
+app.listen(8080, () => console.log(`Server started!`));

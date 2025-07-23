@@ -1,0 +1,89 @@
+W7D4S2Q2
+
+const express = require('express');
+const app = express();
+app.use(express.json());
+const requestCounts={}
+let medicalItems=[
+    {id:1, name:'paracetomol',quantity:2},
+    {id:2, name:'DOLO 650',quantity:4}
+];
+app.use((req,res,next) =>{
+    const route = req.path
+    requestCounts[route] = (requestCounts[route]||0) +1;
+    console.log(`[${new Date().toISOString()}] ${req.method} ${route}`);
+    next();
+
+});
+
+app.get('/',(req,res)=>{
+    res.send('Welcome to the Medical Inventory Application');
+})
+app.get('/about',(req,res)=>{
+    res.send('This application manages medical inventory and logs requests.');
+})
+app.get('/contact',(req,res)=>{
+    res.send('Contact us at medicalinventory@example.com');
+})
+app.get('/items',(req,res)=>{
+    res.json(medicalItems);
+})
+app.get('/items/:id',(req,res)=>{
+    const id = +req.params?.id;
+    const item = medicalItems.find(item=>item.id ===id);
+    if(item){
+        return res.status(200).json(item)
+    }
+    res.status(404).send('item not found');
+})
+
+app.post('/add',(req,res)=>{
+    const {name,quantity}= req.body;
+    const newItem={
+        id:!medicalItems.length ? 1 : medicalItems[medicalItems.length -1].id +1,
+        name,
+        quantity
+
+    }
+    medicalItems.push(newItem);
+    res.status(201).json(newItem);
+
+
+})
+app.put('/update/:id',(req,res)=>{
+    const id = +req.params?.id;
+    const itemIndex = medicalItems.findIndex(index=>index.id === id);
+    if(itemIndex!==-1){
+        const {name,quantity} = req.body;
+        medicalItems[itemIndex] = {...medicalItems[itemIndex],name,quantity};
+        return res.status(200).json(medicalItems[itemIndex]);
+    }
+    res.status(404).send('Item not found');
+})
+app.delete('/delete/:id',(req,res)=>{
+    const id = +req.params?.id;
+    const index = medicalItems.findIndex(index => index.id === id);
+    if(index !== -1){
+     const deleted =   medicalItems.splice(index,1);
+        res.json(deleted);
+    }
+    res.status(404).send('Item not found');
+})
+app.get('/request-counts',(req,res)=>{
+    res.status(400).json(requestCounts);
+})
+app.get('/reset-counts',(req,res)=>{
+    requestCounts={};
+    res.status(400).send('Request counts have been reset');
+})
+
+module.exports = app;
+
+if(require.main === module){
+    const port = 8080;
+    
+app.listen(port,()=>{
+    console.log('server started');
+})
+
+}
